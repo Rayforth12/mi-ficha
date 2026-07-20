@@ -187,7 +187,7 @@ export default function DashboardClient({ userEmail }) {
     <div className="max-w-5xl mx-auto px-5 py-8">
       <header className="flex justify-between items-end flex-wrap gap-4 mb-6">
         <div>
-          <h1 className="font-display font-bold text-4xl">Mi Ficha</h1>
+          <h1 className="font-display font-bold text-4xl">Mi Planificador</h1>
           <p className="text-inksoft text-sm mt-1">
             {userEmail} ·{" "}
             <button onClick={handleLogout} className="underline hover:text-red">

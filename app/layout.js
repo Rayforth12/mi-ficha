@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Mi Ficha — Control de finanzas",
+  title: "Mi Planificador — Control de finanzas",
   description: "Llevá el control de tus ingresos y gastos, quincena a quincena.",
 };
 

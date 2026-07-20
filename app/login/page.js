@@ -34,7 +34,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-sm bg-card border border-line rounded-2xl p-8">
-        <h1 className="font-display font-bold text-3xl mb-1">Mi Ficha</h1>
+        <h1 className="font-display font-bold text-3xl mb-1">Mi Planificador</h1>
         <p className="text-inksoft text-sm mb-6">Entrá para ver tus cuentas.</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
