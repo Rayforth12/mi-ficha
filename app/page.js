@@ -1,11 +1,5 @@
-import { createServerComponentClient } from "@/lib/supabaseServerComponent";
-import DashboardClient from "./DashboardClient";
+import { redirect } from "next/navigation";
 
-export default async function DashboardPage() {
-  const supabase = createServerComponentClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  return <DashboardClient userEmail={user?.email ?? ""} />;
+export default function Home() {
+  redirect("/dashboard");
 }
