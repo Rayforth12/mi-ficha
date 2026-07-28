@@ -94,3 +94,77 @@ create policy "Los usuarios crean solo sus aportes"
 create policy "Los usuarios borran solo sus aportes"
   on public.savings_contributions for delete
   using (auth.uid() = user_id);
+
+-- ===================== LECTURA DE CORREOS DEL BANCO =====================
+
+-- Guarda la conexión de Gmail de cada usuario (contraseña de aplicación, no OAuth).
+-- Ver nota en el código: usamos IMAP + contraseña de aplicación porque el acceso
+-- OAuth de Google en modo "Testing" expira cada 7 días para un proyecto personal
+-- no verificado, lo cual rompería la sincronización automática cada semana.
+create table if not exists public.gmail_connections (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  email_address text not null,
+  app_password text not null,
+  last_synced_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table public.gmail_connections enable row level security;
+
+create policy "Los usuarios ven solo su conexion"
+  on public.gmail_connections for select
+  using (auth.uid() = user_id);
+
+create policy "Los usuarios crean solo su conexion"
+  on public.gmail_connections for insert
+  with check (auth.uid() = user_id);
+
+create policy "Los usuarios editan solo su conexion"
+  on public.gmail_connections for update
+  using (auth.uid() = user_id);
+
+create policy "Los usuarios borran solo su conexion"
+  on public.gmail_connections for delete
+  using (auth.uid() = user_id);
+
+-- Diccionario de comercio -> categoria, aprende con cada clasificacion manual
+create table if not exists public.merchant_categories (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  merchant_key text not null,
+  category text not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, merchant_key)
+);
+
+alter table public.merchant_categories enable row level security;
+
+create policy "Los usuarios ven solo su diccionario"
+  on public.merchant_categories for select
+  using (auth.uid() = user_id);
+
+create policy "Los usuarios crean solo su diccionario"
+  on public.merchant_categories for insert
+  with check (auth.uid() = user_id);
+
+create policy "Los usuarios editan solo su diccionario"
+  on public.merchant_categories for update
+  using (auth.uid() = user_id);
+
+create policy "Los usuarios borran solo su diccionario"
+  on public.merchant_categories for delete
+  using (auth.uid() = user_id);
+
+-- Agregamos columnas a transactions para saber si vino de un correo,
+-- de que banco, el comercio crudo, y evitar importarla dos veces
+alter table public.transactions
+  add column if not exists source text not null default 'manual',
+  add column if not exists bank text,
+  add column if not exists merchant_raw text,
+  add column if not exists email_ref text,
+  add column if not exists needs_review boolean not null default false,
+  add column if not exists tx_kind text not null default 'purchase';
+
+create unique index if not exists transactions_email_ref_unique
+  on public.transactions (user_id, email_ref)
+  where email_ref is not null;
