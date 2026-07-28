@@ -1,4 +1,4 @@
-# Mi Ficha — Control de finanzas personales
+# Mi Planificador — Control de finanzas personales
 
 App web con login, base de datos y gráficas para llevar el control de tus
 ingresos y gastos. Pensada para que vos y quien más quiera usarla se
@@ -27,7 +27,71 @@ registren y cada quien vea solo sus propios datos.
 
 ---
 
-## Paso 2 — Subir el proyecto a GitHub
+## Paso 2 (nuevo) — Conectar tu correo para leer las compras solas
+
+Esta parte le permite a la app leer los correos de aviso de compra y SINPE Móvil
+que te manda el banco (BCR, por ahora) y crear las transacciones automáticamente,
+dejando en "Sin clasificar" las que no reconozca. Es opcional — si no la
+configurás, la app funciona igual, solo que anotás todo a mano como antes.
+
+**Cómo se conecta:** con una *contraseña de aplicación* de Gmail (no con el
+típico botón "Iniciar sesión con Google"). La razón: ese botón usa un permiso
+que, para un proyecto personal como este, Google hace que expire cada 7 días
+—la sincronización se rompería solita cada semana—. Las contraseñas de
+aplicación no tienen ese problema, no piden crear ningún proyecto en Google
+Cloud, y las podés revocar cuando quieras desde tu cuenta de Google.
+
+### 2.1 — Generar la contraseña de aplicación
+
+1. Activá la **verificación en 2 pasos** en tu cuenta de Google, si no la tenés: [myaccount.google.com/security](https://myaccount.google.com/security).
+2. Andá a [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+3. Ponele un nombre (ej. "Mi Planificador") y creála.
+4. Google te muestra una clave de 16 caracteres **una sola vez** — copiala (podés dejar o quitar los espacios, la app los ignora).
+
+### 2.2 — Nueva variable de entorno en Vercel
+
+Sumá esta a las que ya tenías (Settings → Environment Variables):
+
+| Variable | Valor |
+|---|---|
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → pestaña "Anónimo heredado..." → clave `service_role` (⚠️ nunca la compartas, es de acceso total a la base de datos) |
+
+`CRON_SECRET` **no** hay que crearla a mano — Vercel la genera sola en cuanto detecta el cron en `vercel.json`.
+
+Después de agregar la variable, hacé un **Redeploy** para que tome efecto.
+
+### 2.3 — Correr el script SQL actualizado
+
+Si ya habías corrido `supabase/schema.sql` antes, ahora tiene secciones nuevas al
+final (conexión de correo y diccionario de comercios). Andá al SQL Editor de
+Supabase y corré **todo el archivo de nuevo** — las partes que ya existían no
+se duplican (`create table if not exists`), así que es seguro volver a
+correrlo completo.
+
+### 2.4 — Usarlo
+
+1. En la app, andá a la pestaña **"Revisar"**.
+2. Clic en **"Conectar correo"**, pegá tu Gmail y la contraseña de aplicación del paso 2.1, y **"Guardar conexión"**.
+3. Clic en **"Sincronizar ahora"** para traer los movimientos de las últimas 2 semanas.
+4. Las compras que el sistema no reconozca van a **"Sin clasificar"** — les asignás categoría con un clic, y la próxima vez que compres en ese mismo lugar, ya la va a reconocer sola. Lo mismo aplica a un SINPE que le mandás siempre a la misma persona.
+5. Un SINPE que **recibís** se anota como ingreso ("Ingreso extra") automáticamente.
+6. Además de la sincronización manual, hay un **cron automático una vez al día** (mediodía UTC, ~6am hora de Costa Rica) que revisa solo, sin que tengas que entrar. Si querés otra hora, cambiá el número en `vercel.json` (son horas UTC = hora de Costa Rica + 6).
+
+### Nota sobre qué bancos soporta esto ahora mismo
+
+Por ahora solo lee correos de **BCR**: compras con tarjeta, y SINPE Móvil
+enviado y recibido — los tres formatos ya los probé con correos reales tuyos.
+Sumar BAC, Banco Nacional u otro banco es sencillo, pero necesito un correo de
+muestra real de cada uno antes de escribir su "traductor" — un formato
+adivinado podría fallar en silencio o clasificar mal. Si me pasás un ejemplo
+(tapando datos sensibles), lo agrego.
+
+Los retiros de cajero se van a poder marcar aparte y no contar como gasto
+automático (para no duplicar cuando anotés a mano en qué gastaste ese
+efectivo) — falta conectar un banco real para activar esa parte.
+
+
+## Paso 3 — Subir el proyecto a GitHub
 
 1. Creá una cuenta gratis en [github.com](https://github.com) si no tenés.
 2. Creá un repositorio nuevo (puede ser privado), por ejemplo `mi-ficha-web`.
@@ -37,7 +101,7 @@ registren y cada quien vea solo sus propios datos.
 
 ---
 
-## Paso 3 — Poner el sitio en línea con Vercel (gratis)
+## Paso 4 — Poner el sitio en línea con Vercel (gratis)
 
 1. Entrá a [vercel.com](https://vercel.com) y creá una cuenta con tu GitHub.
 2. Hacé clic en **Add New → Project** y elegí el repositorio `mi-ficha-web`.
