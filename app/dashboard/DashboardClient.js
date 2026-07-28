@@ -13,6 +13,7 @@ import CategoryTrend from "@/components/charts/CategoryTrend";
 import DailySpend from "@/components/charts/DailySpend";
 import SavingsRate from "@/components/charts/SavingsRate";
 import SavingsSection from "@/components/savings/SavingsSection";
+import ReviewSection from "@/components/review/ReviewSection";
 
 function monthKey(d) {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
@@ -22,8 +23,9 @@ export default function DashboardClient({ userEmail }) {
   const supabase = createClient();
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState("movimientos"); // 'movimientos' | 'ahorros'
+  const [activeTab, setActiveTab] = useState("movimientos"); // 'movimientos' | 'ahorros' | 'revisar'
   const [transactions, setTransactions] = useState([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [editingTx, setEditingTx] = useState(null);
   const [viewDate, setViewDate] = useState(() => {
@@ -34,8 +36,17 @@ export default function DashboardClient({ userEmail }) {
 
   useEffect(() => {
     loadTransactions();
+    loadPendingCount();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadPendingCount() {
+    const { count } = await supabase
+      .from("transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("needs_review", true);
+    setPendingCount(count || 0);
+  }
 
   async function loadTransactions() {
     setLoading(true);
@@ -220,9 +231,19 @@ export default function DashboardClient({ userEmail }) {
         >
           Ahorros
         </button>
+        <button
+          onClick={() => setActiveTab("revisar")}
+          className={`py-2 px-5 rounded-lg border font-semibold text-sm ${
+            activeTab === "revisar" ? "bg-ink text-white border-ink" : "border-line text-inksoft bg-card"
+          }`}
+        >
+          Revisar {pendingCount > 0 && <span className="text-red">({pendingCount})</span>}
+        </button>
       </div>
 
-      {activeTab === "ahorros" ? (
+      {activeTab === "revisar" ? (
+        <ReviewSection />
+      ) : activeTab === "ahorros" ? (
         <SavingsSection />
       ) : (
         <>
