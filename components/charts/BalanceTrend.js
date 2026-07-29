@@ -1,6 +1,7 @@
 "use client";
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { compactCRC } from "@/lib/categories";
 
 export default function BalanceTrend({ data }) {
   return (
@@ -14,7 +15,7 @@ export default function BalanceTrend({ data }) {
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#C9C0A8" vertical={false} />
         <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#5B6A61" }} axisLine={{ stroke: "#C9C0A8" }} />
-        <YAxis tick={{ fontSize: 11, fill: "#5B6A61" }} axisLine={false} tickLine={false} width={40} />
+        <YAxis tick={{ fontSize: 11, fill: "#5B6A61" }} axisLine={false} tickLine={false} width={54} tickFormatter={compactCRC} />
         <Tooltip formatter={(v) => "₡" + Number(v).toLocaleString("es-CR")} />
         <Area type="monotone" dataKey="Balance" stroke="#B98900" fill="url(#balanceFill)" strokeWidth={2} />
       </AreaChart>

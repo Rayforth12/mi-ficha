@@ -31,6 +31,7 @@ async function syncUser(db, userId, connection) {
 
   for (const tx of parsedTxs) {
     const isIncome = tx.type === "income";
+    const isForeignCurrency = !!(tx.currency && !/colon|crc/i.test(tx.currency));
     let category;
     let needsReview = false;
 
@@ -44,15 +45,23 @@ async function syncUser(db, userId, connection) {
     } else {
       const guessed = guessCategory(tx.merchant, userRules);
       category = guessed || "otros";
-      needsReview = !guessed;
+      // Si fue en una moneda distinta a colones, SIEMPRE va a revisión — el
+      // monto que llega del correo está en esa moneda, no en colones, y
+      // convertirlo automáticamente con un tipo de cambio inventado podría
+      // quedar mal sin que te dieras cuenta. Mejor que ajustes vos el monto.
+      needsReview = !guessed || isForeignCurrency;
     }
+
+    const description = isForeignCurrency
+      ? `${tx.merchantLabel || tx.merchant || tx.bank} (pago en ${tx.currency.trim()} — ajustá el monto a colones)`
+      : tx.merchantLabel || tx.merchant || tx.bank;
 
     const row = {
       user_id: userId,
       type: isIncome ? "income" : "expense",
       category,
       amount: tx.amount,
-      description: tx.merchantLabel || tx.merchant || tx.bank,
+      description,
       date: tx.date,
       source: "email",
       bank: tx.bank,
