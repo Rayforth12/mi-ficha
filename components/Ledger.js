@@ -6,14 +6,14 @@ export default function Ledger({ transactions, onDelete, onEdit, monthLabel, mon
   const sorted = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <div className="bg-card border border-line rounded-xl overflow-hidden">
-      <div className="flex justify-between items-center px-5 pt-4 pb-2">
+    <div className="bg-card border border-line rounded-xl overflow-hidden flex flex-col max-h-[600px]">
+      <div className="flex justify-between items-center px-5 pt-4 pb-2 shrink-0">
         <span className="font-display font-semibold text-lg">Movimientos — {monthLabel}</span>
         <span className="text-xs text-inksoft">
           {sorted.length} registro{sorted.length === 1 ? "" : "s"}
         </span>
       </div>
-      <div className="px-5">
+      <div className="px-5 overflow-y-auto flex-1">
         {sorted.length === 0 ? (
           <p className="text-inksoft text-sm italic py-3">Nada registrado todavía en este mes.</p>
         ) : (
@@ -21,11 +21,20 @@ export default function Ledger({ transactions, onDelete, onEdit, monthLabel, mon
             const info = catInfo(t.type, t.category);
             const d = new Date(t.date + "T00:00:00");
             const dateLabel = d.toLocaleDateString("es-CR", { day: "2-digit", month: "short" });
+            const isAuto = t.source === "email";
             return (
               <div key={t.id} className="flex justify-between items-center gap-3 py-2.5 dashed-divider font-mono text-sm">
                 <div className="min-w-0 flex flex-col gap-0.5">
-                  <span className="font-body text-[0.9rem] text-ink truncate">
+                  <span className="font-body text-[0.9rem] text-ink truncate flex items-center gap-1.5">
                     {info.emoji} {t.description || info.label}
+                    {isAuto && (
+                      <span
+                        title={`Importado automáticamente${t.bank ? " · " + t.bank : ""}`}
+                        className="text-[0.62rem] font-body font-semibold bg-goldsoft text-gold px-1.5 py-0.5 rounded-full shrink-0"
+                      >
+                        📧 {t.bank || "auto"}
+                      </span>
+                    )}
                   </span>
                   <span className="font-body text-[0.7rem] text-inksoft">
                     {info.label} · {dateLabel}
@@ -56,7 +65,7 @@ export default function Ledger({ transactions, onDelete, onEdit, monthLabel, mon
           })
         )}
       </div>
-      <div className="flex justify-between px-5 py-3 border-t-2 border-ink font-mono font-bold mt-2">
+      <div className="flex justify-between px-5 py-3 border-t-2 border-ink font-mono font-bold shrink-0">
         <span>TOTAL DEL MES</span>
         <span className={monthBalance < 0 ? "text-red" : "text-green"}>{fmt(monthBalance)}</span>
       </div>

@@ -14,12 +14,13 @@ async function syncUser(db, userId, connection) {
     .select("merchant_key, category")
     .eq("user_id", userId);
 
-  // Primera vez: mira las últimas 2 semanas. Después, solo desde la última sincronización.
-  const sinceDate = connection.last_synced_at
-    ? new Date(connection.last_synced_at)
-    : new Date(Date.now() - 1000 * 60 * 60 * 24 * 14);
+  // Siempre revisa el último mes completo (no solo desde la última vez).
+  // El índice único de email_ref evita que algo se importe dos veces, así que
+  // no hay riesgo — y así, si algún correo no se pudo leer antes (ej. por un
+  // formato que no reconocíamos), se vuelve a intentar solo en cada sync.
+  const sinceDate = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30);
 
-  const parsedTxs = await fetchBankTransactions({
+  const { transactions: parsedTxs, debug } = await fetchBankTransactions({
     emailAddress: connection.email_address,
     appPassword: connection.app_password,
     sinceDate,
@@ -79,10 +80,11 @@ async function syncUser(db, userId, connection) {
     .update({ last_synced_at: new Date().toISOString() })
     .eq("user_id", userId);
 
-  return { imported, skipped };
+  return { imported, skipped, debug };
 }
 
 // Botón "Sincronizar ahora" — el usuario ya está logueado, solo sincroniza SU correo.
+// Devuelve "debug" con el detalle de cada correo candidato revisado, para diagnosticar.
 export async function POST() {
   const supabase = createServerComponentClient();
   const {
@@ -125,7 +127,7 @@ async function handleCronSync() {
   for (const conn of connections || []) {
     try {
       const result = await syncUser(admin, conn.user_id, conn);
-      results.push({ user_id: conn.user_id, ...result });
+      results.push({ user_id: conn.user_id, imported: result.imported, skipped: result.skipped });
     } catch (e) {
       results.push({ user_id: conn.user_id, error: e.message });
     }
